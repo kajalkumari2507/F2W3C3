@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html style="background-color: black; color: white;">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Crypto Market Data</title>
+  <style>
+    table 
+    {
+      width: 93%;
+      border-collapse: collapse;
+    }
+    th, td 
+    {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    input[type="text"] 
+    {
+      margin-bottom: 10px;
+    }
+    button 
+    {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <input oninput="search()" type="text" id="searchInput" placeholder="Search By Name or Symbol" style="margin-top: 50px; margin-left: 30px; padding: 10px; width: 46%; background: none; color: white;">
+  <button onclick="sort('marketCap')" style="margin-top: 50px; margin-left: 30px; padding: 10px; width: 20%; background: none; color: white;">Sort by Market Cap</button>
+  <button onclick="sort('percentageChange')" style="margin-top: 50px; margin-left: 30px; padding: 10px; width: 20%; background: none; color: white;">Sort by Percentage Change</button>
+  
+  <table id="cryptoTable" style="margin-top: 30px; margin-left: 30px;">
+    <thead style="margin-right: 25px; ">
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>Image</th>
+        <th>Symbol</th>
+        <th>Current Price</th>
+        <th>Total Volume</th>
+      </tr>
+    </thead>
+    <tbody id="cryptoTableBody" style="margin-right: 20px;">
+    </tbody>
+  </table>
+
+  <script>
+    // Function to fetch data from the API using .then
+    function fetchDataWithThen() {
+      const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false';
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          renderTable(data);
+        })
+        .catch(error => {
+          console.log('Error fetching data:', error);
+        });
+    }
+
+    // Function to fetch data from the API using async/await
+    async function fetchDataWithAsyncAwait() {
+      try 
+      {
+        const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false';
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        renderTable(data);
+      } 
+      catch (error) 
+      {
+        console.log('Error fetching data:', error);
+      }
+    }
+
+    // Function to render the table with the retrieved data
+    function renderTable(data) 
+    {
+      const tableBody = document.getElementById('cryptoTableBody');
+
+      // Clear existing table rows
+      tableBody.innerHTML = '';
+
+      // Iterate over the data and create table rows
+      data.forEach(coin => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${coin.name}</td>
+          <td>${coin.id}</td>
+          <td><img src="${coin.image}" alt="${coin.name}" width="30" height="30"></td>
+          <td>${coin.symbol}</td>
+          <td>${coin.current_price}</td>
+          <td>${coin.total_volume}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Function to filter the table based on user input
+    function search() 
+    {
+      const input = document.getElementById('searchInput');
+      const filter = input.value.toLowerCase();
+      const rows = document.getElementById('cryptoTableBody').getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) 
+      {
+        const name = rows[i].getElementsByTagName('td')[0].innerText.toLowerCase();
+        if (name.includes(filter)) 
+        {
+          rows[i].style.display = '';
+        } 
+        else 
+        {
+          rows[i].style.display = 'none';
+        }
+      }
+    }
+
+    // Function to sort the table based on the selected property
+    function sort(property) 
+    {
+      const table = document.getElementById('cryptoTable');
+      const rows = Array.from(table.getElementsByTagName('tr'));
+
+      // Sort the rows based on the selected property
+      rows.sort((a, b) => {
+        const valueA = a.getElementsByTagName('td')[propertyMap[property]].innerText;
+        const valueB = b.getElementsByTagName('td')[propertyMap[property]].innerText;
+
+        return compareValues(valueA, valueB);
+      });
+
+      // Remove existing table rows
+      for (let i = 1; i < rows.length; i++) 
+      {
+        table.removeChild(rows[i]);
+      }
+
+      // Re-insert sorted rows into the table
+      for (let i = 1; i < rows.length; i++) 
+      {
+        table.appendChild(rows[i]);
+      }
+    }
+
+    // Helper function to compare values for sorting
+    function compareValues(valueA, valueB) 
+    {
+      if (isNaN(valueA) || isNaN(valueB)) 
+      {
+        return valueA.localeCompare(valueB);
+      } 
+      else 
+      {
+        return parseFloat(valueA) - parseFloat(valueB);
+      }
+    }
+
+    // Map to store the index of each property in the table cells
+    const propertyMap = {
+      marketCap: 4,
+      percentageChange: 5
+    };
+
+    fetchDataWithThen();
+  </script>
+</body>
+</html>
